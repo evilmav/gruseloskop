@@ -1,5 +1,5 @@
 import pyqtgraph as pg
-from pyqtgraph.Qt import QtGui, QtCore, QtWidgets
+from pyqtgraph.Qt import QtGui, QtCore
 
 import numpy as np
 
@@ -33,7 +33,6 @@ class ScopeGui:
 
     def _ui_setup(self):
 
-        self._app = pg.mkQApp()
         self._mw = QtGui.QMainWindow()
         self._mw.setWindowTitle("MTP Gruselloskop")
         self._mw.resize(800, 800)
@@ -113,7 +112,7 @@ class ScopeGui:
         self._lbl_stats.setText("Signal statistics")
         return self._lbl_stats
 
-    def _trigger_controls_create(self):        
+    def _trigger_controls_create(self):
         _rb_trig_auto = QtGui.QRadioButton("Auto")
         _rb_trig_norm = QtGui.QRadioButton("Norm")
         _rb_trig_stop = QtGui.QRadioButton("Stop")
@@ -140,7 +139,7 @@ class ScopeGui:
         self._bg_trig_src.idToggled.connect(self._control_changed)
         self._sld_trig_lvl.valueChanged.connect(self._trig_lvl_changed)
 
-        layout = QtGui.QGridLayout()        
+        layout = QtGui.QGridLayout()
         layout.addWidget(_rb_trig_auto, 0, 0, 1, 1)
         layout.addWidget(_rb_trig_norm, 0, 1, 1, 1)
         layout.addWidget(_rb_trig_stop, 0, 2, 1, 1)
@@ -229,13 +228,13 @@ class ScopeGui:
             self._plot0.setVisible(self._gb_vertical_a0.isChecked())
             self._plot1.setVisible(self._gb_vertical_a1.isChecked())
 
-            self._plot0.setData(y=data.data0, x=data.times0)
-            self._plot1.setData(y=data.data1, x=data.times1)
+            self._plot0.setData(y=data.data0, x=data.time0)
+            self._plot1.setData(y=data.data1, x=data.time1)
 
     def _stats_data_update(self, data):
         if data is None:
             self._lbl_stats.setText("NO DATA")
-            return 
+            return
 
         a0avg = np.mean(data.data0)
         a0pp = np.max(data.data0) - np.min(data.data0)
@@ -244,7 +243,9 @@ class ScopeGui:
         stat = "A0: Vavg={:.3}, Vpp={:.3}; A1: Vavg={:.3}, Vpp={:.3};".format(
             a0avg, a0pp, a1avg, a1pp
         )
-        self._lbl_stats.setText(stat)
+
+        spl_rate_hint = "Sample rate: {:.3}kHz; ".format(data.spl_rate / 1000)
+        self._lbl_stats.setText(spl_rate_hint + stat)
 
     def _drv_update(self, data):
         self._last_data = data
@@ -276,4 +277,4 @@ class ScopeGui:
     def _control_changed(self, source):
         self._crt_ax_update()
         self._drv_update(self._last_data)
-        self._driver.set_config(self._gather_drv_config)
+        self._driver.set_config(self._gather_drv_config())

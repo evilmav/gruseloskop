@@ -1,6 +1,9 @@
 {
     "cSpell.words": [
         "divs",
+        "fbase",
+        "fgen",
+        "fgenbase",
         "gruselloskop",
         "gruseloscope",
         "mtpkit",
@@ -8,8 +11,10 @@
         "pyqtgraph",
         "sgen",
         "tmax",
+        "tobytes",
         "vavg",
         "vmax",
-        "vmin"
+        "vmin",
+        "vref"
     ]
 }

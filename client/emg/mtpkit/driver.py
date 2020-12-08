@@ -1,7 +1,9 @@
 from dataclasses import dataclass
 from enum import IntEnum
 from serial import Serial
+from pyqtgraph.Qt import QtCore
 import numpy as np
+from time import sleep
 
 
 class Trigger(IntEnum):
@@ -9,15 +11,17 @@ class Trigger(IntEnum):
     NORM = 1
     STOP = 2
 
-@dataclass 
-class Config:
-    trig_mode: Trigger 
-    trig_level: float
-    trig_chan: int
-    timeframe: float
-    sgen_freq: float 
 
-@dataclass 
+@dataclass
+class Config:
+    trig_mode: Trigger = Trigger.AUTO
+    trig_level: float = 2.5
+    trig_chan: int = 0
+    timeframe: float = 0.1
+    sgen_freq: float = 0
+
+
+@dataclass
 class FrameData:
     time0: np.ndarray
     time1: np.ndarray
@@ -26,17 +30,153 @@ class FrameData:
     triggered: bool
     spl_rate: float
 
+    @staticmethod
+    def packet_size(chan_samples):
+        header_size = 4
+        aux_size = 1
+        return header_size + aux_size + chan_samples * 2
+
+
 class UnoDriver:
+    _poll_delay_ms = 5
+    _serial_baud = 115200
+
+    _vref = 5.0
+    _chan_samples = 600
+    _sample_base_clk = 30000
+    _channel1_delay = 1.0 / 76900
+
+    _fgen_base_clk = 30000  # TODO
+
+    _syncword = [0x00, 0x00, 0xFF, 0xFF]
 
     @staticmethod
     def find_ports():
-        pass  
+        pass
 
     def __init__(self, port):
-        pass
+        self._dummy_mode = port == "dummy"
+
+        self._port = port
+        self._ser = None
+        self._upd_callback = None
+        self._last_config = Config()
+        self._config_queue = None
+
+        self._packet_size = FrameData.packet_size(UnoDriver._chan_samples)
+
+        self._poll_timer = QtCore.QTimer()
+        self._poll_timer.timeout.connect(self._poll)
+        self._poll_timer.start(UnoDriver._poll_delay_ms)
+
+        self._serial_init()
+
+    def _serial_init(self):
+        if not self._dummy_mode:
+            print("No sync or port closed: initializing UART")
+            self._ser = None
+            init = Serial(port=self._port, baudrate=UnoDriver._serial_baud)
+            init.setDTR(False)
+            sleep(0.25)
+            init.flushInput()
+            init.setDTR(True)
+            self._ser = init
+
+        self._send_apply_config(self._last_config)
+
+    def _parse_acq_packet(self, packet):
+        packet = np.frombuffer(packet, dtype=np.uint8)
+        data0 = np.empty_like(self._cur_time0)
+        data1 = np.empty_like(self._cur_time1)
+
+        sync_size = np.size(self._syncword)
+
+        if not np.array_equal(packet[:sync_size], self._syncword):
+            return None
+
+        aux_size = 1
+        aux_data = packet[sync_size : sync_size + aux_size]
+        triggered = aux_data != 0
+
+        data = (
+            packet[sync_size + aux_size :]
+            .astype(np.float32)
+            .reshape((2, self._chan_samples))
+        )
+        data0 = data[0, :] / 0xFF * UnoDriver._v_ref
+        data1 = data[1, :] / 0xFF * UnoDriver._v_ref
+
+        return FrameData(
+            self._cur_time0,
+            self._cur_time1,
+            data0,
+            data1,
+            triggered,
+            self._cur_sample_rate,
+        )
+
+    def _get_dummy_dataframe(self):
+        data0 = 0.5 * (0.5 + np.random.rand(UnoDriver._chan_samples)) * UnoDriver._vref
+        data1 = 0.5 * (0.5 + np.random.rand(UnoDriver._chan_samples)) * UnoDriver._vref
+        return FrameData(
+            self._cur_time0, self._cur_time1, data0, data1, True, self._cur_sample_rate
+        )
 
     def set_config(self, config):
-        pass
+        assert isinstance(config, Config)
+        if (self._last_config is not None) and (config != self._last_config):
+            self._config_queue = config
 
     def set_update_callback(self, callback):
-        pass
+        self._upd_callback = callback
+
+    def _config_packet_make(self, config, sample_div, level):
+        packet = np.empty(6, dtype=np.uint8)
+        packet[0] = 0  # begin with 0 sync
+        packet[1] = config.trig_mode
+        packet[2] = level
+        packet[3] = config.trig_chan
+        packet[4] = sample_div
+        packet[5] = 0  # TODO: signal generator
+        return packet.tobytes()
+
+    def _send_apply_config(self, config):
+        time_at_max_rate = UnoDriver._chan_samples / UnoDriver._sample_base_clk
+        spl_rate_div = int(np.ceil(config.timeframe / time_at_max_rate))
+        trig_level = int(config.trig_level / UnoDriver._vref * 0xFF)
+
+        if not self._dummy_mode and self._ser is not None:
+            packet = self._config_packet_make(config, spl_rate_div, trig_level)
+            self._ser.write(packet)
+
+        self._cur_sample_rate = UnoDriver._sample_base_clk / spl_rate_div
+        self._cur_time0 = np.linspace(
+            0, time_at_max_rate * spl_rate_div, UnoDriver._chan_samples
+        )
+        self._cur_time1 = self._cur_time0 + UnoDriver._channel1_delay
+        self._last_config = config
+
+    def _poll(self):
+        if self._dummy_mode:
+            if (
+                self._upd_callback is not None
+                and not self._last_config.trig_mode == Trigger.STOP
+            ):
+                self._upd_callback(self._get_dummy_dataframe())
+        else:
+            if self._ser is None or not self._ser.is_open:
+                return
+
+            if self._ser.in_waiting >= self._packet_size:
+                packet = self._ser.read(self._packet_size)
+                assert len(packet) == self._packet_size
+
+                parsed = self._parse_acq_packet(packet)
+                if parsed is None:
+                    self._serial_init()  # lost sync or something like that
+                elif self._upd_callback is not None:
+                    self._upd_callback(parsed)
+
+        if self._config_queue is not None:
+            self._send_apply_config(self._config_queue)
+            self._config_queue = None
