@@ -1,7 +1,9 @@
 
 #define N_SAMPLES 600
+uint8_t triggered = 0;
 uint8_t achan0[N_SAMPLES];
 uint8_t achan1[N_SAMPLES];
+
 
 uint8_t adc_read( uint8_t channel )
 {
@@ -23,21 +25,23 @@ void adc_init() {
 void send_packet() {
   uint8_t header[4] = { 0x00, 0x00, 0xFF, 0xFF };
   Serial.write(header, sizeof(header));  
-  // TODO: add aux later
+  Serial.write(&triggered, sizeof(triggered));
   Serial.write(achan0, sizeof(achan0));  
   Serial.write(achan1, sizeof(achan1)); 
   
   // not waiting for ack is faster but can produce overflows
+  /*
   while (Serial.available() < 1) { 
   }
   uint8_t ack = Serial.read();
   if (ack != 0) {
     // TODO: parse config
-  }
+  } */
 }
 
 void capture_run() {
   //trigger test
+  /*
   uint8_t lvl = 0x8F;
   uint8_t cur = adc_read(0);
   uint8_t last = cur;
@@ -45,7 +49,7 @@ void capture_run() {
     last = cur;
     cur = adc_read(0);  
   } 
-  
+  */
   for (uint16_t i=0; i<N_SAMPLES; ++i) {
     // TODO: timed sampling
     achan0[i] = adc_read(0);

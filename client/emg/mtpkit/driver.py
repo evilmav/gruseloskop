@@ -108,8 +108,8 @@ class UnoDriver:
             .astype(np.float32)
             .reshape((2, self._chan_samples))
         )
-        data0 = data[0, :] / 0xFF * UnoDriver._v_ref
-        data1 = data[1, :] / 0xFF * UnoDriver._v_ref
+        data0 = data[0, :] / 0xFF * UnoDriver._vref
+        data1 = data[1, :] / 0xFF * UnoDriver._vref
 
         return FrameData(
             self._cur_time0,
