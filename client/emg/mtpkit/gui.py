@@ -29,6 +29,8 @@ class ScopeGui:
         self._ui_setup()
         driver.set_update_callback(self._drv_update)
 
+        self._control_changed(None)
+
     def _ui_setup(self):
 
         self._app = pg.mkQApp()
@@ -38,7 +40,7 @@ class ScopeGui:
 
         cw = QtGui.QWidget()
         self._mw.setCentralWidget(cw)
-        l = QtGui.QGridLayout()        
+        l = QtGui.QGridLayout()
         cw.setLayout(l)
 
         l.addWidget(self._crt_create(), 0, 1, 1, 1)
@@ -46,7 +48,6 @@ class ScopeGui:
         l.addWidget(self._stats_create(), 1, 1, 1, 1)
 
         self._mw.show()
-        self._crt_ax_update()
 
     def _crt_create(self):
         self._crt = pg.PlotWidget(name="Scope")
@@ -112,36 +113,41 @@ class ScopeGui:
         self._lbl_stats.setText("Signal statistics")
         return self._lbl_stats
 
-    def _trigger_controls_create(self):
-        self._rb_trig_auto = QtGui.QRadioButton("Auto")
-        self._rb_trig_norm = QtGui.QRadioButton("Norm")
-        self._rb_trig_stop = QtGui.QRadioButton("Stop")
-        self._rb_trig_auto.setChecked(True)
+    def _trigger_controls_create(self):        
+        _rb_trig_auto = QtGui.QRadioButton("Auto")
+        _rb_trig_norm = QtGui.QRadioButton("Norm")
+        _rb_trig_stop = QtGui.QRadioButton("Stop")
+        _rb_trig_auto.setChecked(True)
 
-        self._rb_trig_src0 = QtGui.QRadioButton("A0")
-        self._rb_trig_src1 = QtGui.QRadioButton("A1")
-        self._rb_trig_src0.setChecked(True)
+        self._bg_trig_mode = QtGui.QButtonGroup()
+        self._bg_trig_mode.addButton(_rb_trig_auto, Trigger.AUTO)
+        self._bg_trig_mode.addButton(_rb_trig_norm, Trigger.NORM)
+        self._bg_trig_mode.addButton(_rb_trig_stop, Trigger.STOP)
+
+        _rb_trig_src0 = QtGui.QRadioButton("A0")
+        _rb_trig_src1 = QtGui.QRadioButton("A1")
+        _rb_trig_src0.setChecked(True)
+
+        self._bg_trig_src = QtGui.QButtonGroup()
+        self._bg_trig_src.addButton(_rb_trig_src0, 0)
+        self._bg_trig_src.addButton(_rb_trig_src1, 1)
 
         self._sld_trig_lvl = QtGui.QSlider(QtCore.Qt.Horizontal)
         self._sld_trig_lvl.setTracking(True)
         self._sld_trig_lvl.setValue(50)
 
-        self._rb_trig_auto.toggled.connect(self._control_changed)
-        self._rb_trig_norm.toggled.connect(self._control_changed)
-        self._rb_trig_stop.toggled.connect(self._control_changed)
-        self._rb_trig_src0.toggled.connect(self._control_changed)
-        self._rb_trig_src1.toggled.connect(self._control_changed)
-
+        self._bg_trig_mode.idToggled.connect(self._control_changed)
+        self._bg_trig_src.idToggled.connect(self._control_changed)
         self._sld_trig_lvl.valueChanged.connect(self._trig_lvl_changed)
 
-        layout = QtGui.QGridLayout()
-        layout.addWidget(self._rb_trig_auto, 0, 0, 1, 1)
-        layout.addWidget(self._rb_trig_norm, 0, 1, 1, 1)
-        layout.addWidget(self._rb_trig_stop, 0, 2, 1, 1)
+        layout = QtGui.QGridLayout()        
+        layout.addWidget(_rb_trig_auto, 0, 0, 1, 1)
+        layout.addWidget(_rb_trig_norm, 0, 1, 1, 1)
+        layout.addWidget(_rb_trig_stop, 0, 2, 1, 1)
 
         layout.addWidget(QtGui.QLabel("Source:"), 1, 0, 1, 1)
-        layout.addWidget(self._rb_trig_src0, 1, 1, 1, 1)
-        layout.addWidget(self._rb_trig_src1, 1, 2, 1, 1)
+        layout.addWidget(_rb_trig_src0, 1, 1, 1, 1)
+        layout.addWidget(_rb_trig_src1, 1, 2, 1, 1)
 
         layout.addWidget(QtGui.QLabel("Level:"), 2, 0, 1, 1)
         layout.addWidget(self._sld_trig_lvl, 2, 1, 1, 2)
@@ -203,23 +209,34 @@ class ScopeGui:
         self._control_changed(source)
 
     def _crt_data_update(self, data):
-        if self.xy_mode:
-            self._chan0.setVisible(False)
-            self._chan1.setVisible(True)
-            if self.xy_mode == "A1":
-                self._chan1.setData(y=data.data1, x=data.data0)
-            elif self.xy_mode == "A1-A0":
-                self._chan1.setData(y=data.data1 - data.data0, x=data.data0)
-            else:
-                self._chan1.setData(y=[], x=[])
-        else:
-            self._chan0.setVisible(self._gb_vertical_a0.value)
-            self._chan1.setVisible(self._gb_vertical_a1.value)
+        if data is None:
+            self._plot0.setVisible(False)
+            self._plot1.setVisible(False)
+            self._plot0.setData(y=[], x=[])
+            self._plot1.setData(y=[], x=[])
+            return
 
-            self._chan0.setData(y=data.data0, x=data.times0)
-            self._chan1.setData(y=data.data1, x=data.times1)
+        if self.xy_mode:
+            self._plot0.setVisible(False)
+            self._plot1.setVisible(True)
+            if self.xy_mode == "A1":
+                self._plot1.setData(y=data.data1, x=data.data0)
+            elif self.xy_mode == "A1-A0":
+                self._plot1.setData(y=data.data1 - data.data0, x=data.data0)
+            else:
+                self._plot1.setData(y=[], x=[])
+        else:
+            self._plot0.setVisible(self._gb_vertical_a0.isChecked())
+            self._plot1.setVisible(self._gb_vertical_a1.isChecked())
+
+            self._plot0.setData(y=data.data0, x=data.times0)
+            self._plot1.setData(y=data.data1, x=data.times1)
 
     def _stats_data_update(self, data):
+        if data is None:
+            self._lbl_stats.setText("NO DATA")
+            return 
+
         a0avg = np.mean(data.data0)
         a0pp = np.max(data.data0) - np.min(data.data0)
         a1avg = np.mean(data.data1)
@@ -230,6 +247,7 @@ class ScopeGui:
         self._lbl_stats.setText(stat)
 
     def _drv_update(self, data):
+        self._last_data = data
         self._crt_data_update(data)
         self._stats_data_update(data)
 
@@ -246,5 +264,16 @@ class ScopeGui:
         else:
             return False
 
+    def _gather_drv_config(self):
+        cfg = Config()
+        cfg.trig_mode = self._bg_trig_mode.checkedId()
+        cfg.trig_level = self._sld_trig_lvl.value() / 100 * 5.0
+        cfg.trig_chan = self._bg_trig_src.checkedId()
+        cfg.timeframe = self.divtime * ScopeGui._time_divs
+        cfg.sgen_freq = 1000 if self._gb_sgen.isChecked() else 0
+        return cfg
+
     def _control_changed(self, source):
-        pass
+        self._crt_ax_update()
+        self._drv_update(self._last_data)
+        self._driver.set_config(self._gather_drv_config)

@@ -1,10 +1,10 @@
 from dataclasses import dataclass
-from enum import Enum
+from enum import IntEnum
 from serial import Serial
 import numpy as np
 
 
-class Trigger(Enum):
+class Trigger(IntEnum):
     AUTO = 0
     NORM = 1
     STOP = 2
