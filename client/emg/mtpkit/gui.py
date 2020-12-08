@@ -9,6 +9,18 @@ from .driver import FrameData, Config, Trigger
 class ScopeGui:
     _time_divs = 6
     _volt_divs = 5
+    _t_div_items = {
+        "1s    / DIV": 1.0,
+        "0.5s  / DIV": 0.5,
+        "200ms / DIV": 0.2,
+        "100ms / DIV": 0.1,
+        "50ms  / DIV": 0.05,
+        "20ms  / DIV": 0.02,
+        "10ms  / DIV": 0.01,
+        "5ms   / DIV": 0.005,
+        "2ms   / DIV": 0.002,
+        "1ms   / DIV": 0.001,
+    }
 
     def __init__(self, driver):
         self._driver = driver
@@ -26,8 +38,7 @@ class ScopeGui:
 
         cw = QtGui.QWidget()
         self._mw.setCentralWidget(cw)
-        l = QtGui.QGridLayout()
-        l.setContentsMargins(20, 20, 20, 20)
+        l = QtGui.QGridLayout()        
         cw.setLayout(l)
 
         l.addWidget(self._crt_create(), 0, 1, 1, 1)
@@ -65,7 +76,7 @@ class ScopeGui:
         gb_trig.setLayout(self._trigger_controls_create())
 
         gb_horizontal = QtGui.QGroupBox("Horizontal")
-        # gb_horizontal.setLayout(self._horizontal_controls_create())
+        gb_horizontal.setLayout(self._horizontal_controls_create())
 
         self._gb_vertical_a0 = QtGui.QGroupBox("Vertical A0")
         self._gb_vertical_a0.setCheckable(True)
@@ -79,14 +90,20 @@ class ScopeGui:
         self._gb_vertical_a1.setStyleSheet("QGroupBox:title {color: rgb(0, 200, 100);}")
         self._gb_vertical_a1.setLayout(self._vertical_controls_create(1))
 
+        self._gb_sgen = QtGui.QGroupBox("Signal generator")
+        self._gb_sgen.setCheckable(True)
+        self._gb_sgen.setLayout(self._sgen_controls_create())
+
         self._gb_vertical_a0.toggled.connect(self._control_changed)
         self._gb_vertical_a1.toggled.connect(self._control_changed)
+        self._gb_sgen.toggled.connect(self._control_changed)
 
         layout = QtGui.QVBoxLayout()
         layout.addWidget(gb_trig)
         layout.addWidget(gb_horizontal)
         layout.addWidget(self._gb_vertical_a0)
         layout.addWidget(self._gb_vertical_a1)
+        layout.addWidget(self._gb_sgen)
         return layout
 
     def _stats_create(self):
@@ -137,7 +154,35 @@ class ScopeGui:
         return layout
 
     def _horizontal_controls_create(self):
-        return QtGui.QLabel()  # TODO
+        self._cmb_t_div = pg.ComboBox(
+            items=ScopeGui._t_div_items,
+            default=list(ScopeGui._t_div_items.values())[-1],
+        )
+        self._cmb_t_div.currentIndexChanged.connect(self._control_changed)
+
+        self._rb_xy_ty = QtGui.QRadioButton("t-Y")
+        self._rb_xy_a0a1 = QtGui.QRadioButton("X-Y (X=A0, Y=A1)")
+        self._rb_xy_a0a10 = QtGui.QRadioButton("X-Y (X=A0, Y=A1-A0)")
+        self._rb_xy_ty.setChecked(True)
+
+        self._rb_xy_ty.toggled.connect(self._control_changed)
+        self._rb_xy_a0a1.toggled.connect(self._control_changed)
+        self._rb_xy_a0a10.toggled.connect(self._control_changed)
+
+        layout = QtGui.QVBoxLayout()
+        layout.addWidget(self._cmb_t_div)
+        layout.addWidget(self._rb_xy_ty)
+        layout.addWidget(self._rb_xy_a0a1)
+        layout.addWidget(self._rb_xy_a0a10)
+        return layout
+
+    def _sgen_controls_create(self):
+        lbl0 = QtGui.QLabel("Offset: 2.5V, Vpp=5V")
+        lbl1 = QtGui.QLabel("1kHz")
+        layout = QtGui.QVBoxLayout()
+        layout.addWidget(lbl0)
+        layout.addWidget(lbl1)
+        return layout
 
     def _crt_ax_update(self):
         vmin, vmax = 0.0, 5.0
@@ -154,21 +199,52 @@ class ScopeGui:
         self._crt_axis_set("left", vmin, vmax, ScopeGui._volt_divs)
 
     def _trig_lvl_changed(self, source):
-        pass
-
-    def _control_changed(self, source):
-        pass
+        # reserved for drawing trigger level line later
+        self._control_changed(source)
 
     def _crt_data_update(self, data):
-        pass
+        if self.xy_mode:
+            self._chan0.setVisible(False)
+            self._chan1.setVisible(True)
+            if self.xy_mode == "A1":
+                self._chan1.setData(y=data.data1, x=data.data0)
+            elif self.xy_mode == "A1-A0":
+                self._chan1.setData(y=data.data1 - data.data0, x=data.data0)
+            else:
+                self._chan1.setData(y=[], x=[])
+        else:
+            self._chan0.setVisible(self._gb_vertical_a0.value)
+            self._chan1.setVisible(self._gb_vertical_a1.value)
 
-    def _drv_update(self, FrameData):
-        pass
+            self._chan0.setData(y=data.data0, x=data.times0)
+            self._chan1.setData(y=data.data1, x=data.times1)
+
+    def _stats_data_update(self, data):
+        a0avg = np.mean(data.data0)
+        a0pp = np.max(data.data0) - np.min(data.data0)
+        a1avg = np.mean(data.data1)
+        a1pp = np.max(data.data1) - np.min(data.data1)
+        stat = "A0: Vavg={:.3}, Vpp={:.3}; A1: Vavg={:.3}, Vpp={:.3};".format(
+            a0avg, a0pp, a1avg, a1pp
+        )
+        self._lbl_stats.setText(stat)
+
+    def _drv_update(self, data):
+        self._crt_data_update(data)
+        self._stats_data_update(data)
 
     @property
     def divtime(self):
-        return 0.1e-3  # TODO
+        return self._cmb_t_div.value()
 
     @property
     def xy_mode(self):
-        return False  # TODO
+        if self._rb_xy_a0a1.isChecked():
+            return "A1"
+        elif self._rb_xy_a0a10.isChecked():
+            return "A1-A0"
+        else:
+            return False
+
+    def _control_changed(self, source):
+        pass
