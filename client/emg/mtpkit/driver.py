@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from enum import IntEnum
 from serial import Serial
+from serial.tools import list_ports
 from pyqtgraph.Qt import QtCore
 import numpy as np
 from time import sleep
@@ -38,6 +39,8 @@ class FrameData:
 
 
 class UnoDriver:
+    _device_pid = 67
+    _device_vid = 9025
     _poll_delay_ms = 5
     _serial_baud = 115200
 
@@ -51,8 +54,10 @@ class UnoDriver:
     _syncword = [0x00, 0x00, 0xFF, 0xFF]
 
     @staticmethod
-    def find_ports():
-        pass
+    def find_devices():
+        for port in list_ports.comports():
+            if port.pid == UnoDriver._device_pid and port.vid == UnoDriver._device_vid:
+                yield port.device
 
     def __init__(self, port):
         self._dummy_mode = port == "dummy"

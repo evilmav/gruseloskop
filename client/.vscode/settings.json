@@ -12,6 +12,7 @@
         "sgen",
         "tmax",
         "tobytes",
+        "unos",
         "vavg",
         "vmax",
         "vmin",
