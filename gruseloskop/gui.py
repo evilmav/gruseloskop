@@ -153,9 +153,9 @@ class ScopeGui:
         self._bg_trig_edge.addButton(rb_trig_edge_falling, TriggerEdge.FALLING)
         self._bg_trig_edge.addButton(rb_trig_edge_both, TriggerEdge.BOTH)
 
-        self._bg_trig_mode.idToggled.connect(self._control_changed)
-        self._bg_trig_src.idToggled.connect(self._control_changed)
-        self._bg_trig_edge.idToggled.connect(self._control_changed)
+        self._bg_trig_mode.buttonClicked.connect(self._control_changed)
+        self._bg_trig_src.buttonClicked.connect(self._control_changed)
+        self._bg_trig_edge.buttonClicked.connect(self._control_changed)
         self._sld_trig_lvl.valueChanged.connect(self._trig_lvl_changed)
 
         layout = QtGui.QGridLayout()
