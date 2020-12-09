@@ -4,7 +4,7 @@
 #define ACQ_CLK_PIN 13  //Acquisition clock output here for external measurement
 #define SGEN_PIN 9      //Signal generator output
 
-#define N_SAMPLES 600
+#define N_SAMPLES 800
 
 
 

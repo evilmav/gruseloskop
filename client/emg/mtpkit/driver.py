@@ -50,7 +50,7 @@ class UnoDriver:
     _serial_baud = 115200
 
     _vref = 5.0
-    _chan_samples = 600
+    _chan_samples = 800
     # max sample rate inferred from measurement at reference clock output (13)
     _sample_base_clk = 12886.6 * 2   
     _channel1_delay = 1.0 / 76900  # maximum theoretical rate between samples
