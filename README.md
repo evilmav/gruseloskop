@@ -8,7 +8,7 @@ this as the only tool in your lab) is a simple oscilloscope GUI for Arduino Uno.
 > **Companion Arduino Uno sketch must be manually flashed using [Arduino IDE][arduino]**
 > You can find the sketch under [firmware][firmware]. 
 
-![](screenshot.gif) 
+![](https://raw.githubusercontent.com/EvilMav/gruseloskop/master/screenshot.gif) 
 
 This is a project hacked together over a weekend and is not regularly maintained. 
 Keep bleach closely available at all times to wash you eyes in case you accidentally see
