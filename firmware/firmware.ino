@@ -25,11 +25,11 @@ struct {
 
 struct {
   uint8_t sync = 0;
-  uint8_t trig_mode = AUTO;        // dont use enum here to ensure 8bit
+  uint8_t trig_mode = TRIG_AUTO;        // dont use enum here to ensure 8bit
   uint8_t trig_level = 0x8F;
   uint8_t trig_chan = 0;
   uint8_t trig_edge = EDGE_RISING; // dont use enum here to ensure 8bit
-  uint8_t spl_div = 0;
+  uint8_t spl_div = 0;             // drop every Nth sample to reduce sample rate
   uint8_t sgen_div = 0;
 } cfg;
 
@@ -80,11 +80,12 @@ void toggle_acq_clock_output() {
 }
 
 void wait_trigger() {    
-  uint8_t lvl = 0x8F;
-  uint8_t cur = adc_read(cfg.trig_chan);
-  uint8_t last = cur;
+  uint32_t auto_countdown = 3 * (cfg.spl_div + 1) * N_SAMPLES;
   
-  while (1) {
+  uint8_t cur = adc_read(cfg.trig_chan);
+  uint8_t last = cur;  
+  
+  while (auto_countdown) {
     last = cur;
     cur = adc_read(cfg.trig_chan);
 
@@ -92,6 +93,12 @@ void wait_trigger() {
       // config changed, this took some time - reset to avoid jitter      
       cur = adc_read(cfg.trig_chan);
       continue;
+    }
+
+    if (cfg.trig_mode == TRIG_STOP) {
+      continue;  // keep emulating until config changes above
+    } else if (cfg.trig_mode == TRIG_AUTO) {
+      --auto_countdown;
     }
 
     bool rising = (last < cfg.trig_level) && (cur >= cfg.trig_level);
