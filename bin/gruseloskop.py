@@ -5,8 +5,8 @@ import argparse
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtGui, QtCore
 
-from emg.mtpkit.driver import UnoDriver
-from emg.mtpkit.gui import ScopeGui
+from gruseloskop.driver import UnoDriver
+from gruseloskop.gui import ScopeGui
 
 parser = argparse.ArgumentParser(description="Process some integers.")
 parser.add_argument(

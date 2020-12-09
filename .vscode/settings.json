@@ -12,6 +12,7 @@
         "mtpkit",
         "pyqt",
         "pyqtgraph",
+        "pyserial",
         "sgen",
         "tmax",
         "tobytes",

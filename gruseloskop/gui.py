@@ -232,8 +232,16 @@ class ScopeGui:
         return layout
 
     def _author_controls_create(self):
+        repo = '<a href="https://github.com/EvilMav/gruseloskop">GitHub repository</a>'
+
+        label = QtGui.QLabel("Ilya Elenskiy\ni.elenskiy@tu-bs.de\n" + repo)
+        label.setAlignment(QtGui.AlignCenter)
+        label.setTextFormat(QtGui.RichText)
+        label.setTextInteractionFlags(QtGui.TextBrowserInteraction)
+        label.setOpenExternalLinks(True)
+
         layout = QtGui.QVBoxLayout()
-        layout.addWidget(QtGui.QLabel("Ilya Elenskiy, EMG\ni.elenskiy@tu-bs.de"))
+        layout.addWidget(label)
         return layout
 
     def _crt_ax_update(self):
