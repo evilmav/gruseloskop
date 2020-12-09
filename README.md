@@ -43,15 +43,16 @@ automatically detect the correct serial port by the currently hardcoded *VID:PID
 ## Capabilities
 
 Currently, selectable edge triggers are supported. After each trigger, the arduino will 
-sample `A0` and `A1` channel at 8 bit, filling 800 sample buffer. The sample rate is 
-chosen such that at least one screen of the GUI is filled at can currently achieve about
-25kHz. Pin 9 can be used as a 5V rectangle wave generator output with selectable 
-frequency. There are no vertical controls.
+sample `A0` and `A1` channels with 8 bit, filling 800 sample buffer. The sample rate is 
+chosen such that at least one screen of the GUI is filled, achieving a maximum of about
+25kHz at sufficiently low time bases. Pin 9 can be used as a 5V rectangle wave generator 
+output with selectable frequency. 
 
-Be careful with the **reference voltage**: to achieve a 5V input range the Vcc of the 
-Board is used. When connected to USB only, this is subject to an **USB supply tolerance
-of up to 10%!** When connected to an external supply, the on-board linear regulator will 
-likely provide more reproducible results, so use it when possible.
+Be careful with the voltages: to achieve a 5V input range the Vcc of the Board is used 
+as the **reference voltage**. When connected to USB only, this is subject to an 
+**USB supply tolerance of up to 10%!** When connected to an external supply, the 
+on-board linear regulator will likely provide more reproducible results, so use it when
+possible.
 
 
 [arduino]: https://www.arduino.cc/en/software
