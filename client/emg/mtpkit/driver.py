@@ -51,10 +51,9 @@ class UnoDriver:
 
     _vref = 5.0
     _chan_samples = 600
-    _sample_base_clk = 76900 / 2   # rate measured at reference clock output (13)
+    # max sample rate inferred from measurement at reference clock output (13)
+    _sample_base_clk = 12886.6 * 2   
     _channel1_delay = 1.0 / 76900  # maximum theoretical rate between samples
-
-    _fgen_base_clk = 30000  # TODO
 
     _syncword = [0x00, 0x00, 0xFF, 0xFF]
 
