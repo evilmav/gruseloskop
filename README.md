@@ -2,7 +2,7 @@
 
 # Gruseloskop
 
-Gruseloskop (German worldplay refering to an imagination of having
+Gruseloskop (german worldplay refering to an imagination of having
 this as the only tool in your lab) is a simple oscilloscope GUI for Arduino Uno. 
 
 > **Companion Arduino Uno sketch must be manually flashed using [Arduino IDE][arduino]**
@@ -22,7 +22,7 @@ First, ensure that [Qt][qt] is installed on your system. Use `pip` to install th
 note that it will automatically install [PySide2][pyside] Qt bindings.
 
 ```sh
-pip install gruseloskop
+pip install git+https://github.com/EvilMav/gruseloskop.git
 ```
 
 ### On Windows
