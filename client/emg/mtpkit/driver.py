@@ -90,6 +90,7 @@ class UnoDriver:
             sleep(0.25)
             init.flushInput()
             init.setDTR(True)
+            sleep(0.5)          # wait for arduino to become ready to receive config
             self._ser = init
 
         self._send_apply_config(self._last_config)
@@ -134,7 +135,7 @@ class UnoDriver:
 
     def set_config(self, config):
         assert isinstance(config, Config)
-        if (self._last_config is not None) and (config != self._last_config):
+        if (self._last_config is None) or (config != self._last_config):
             self._config_queue = config
 
     def set_update_callback(self, callback):

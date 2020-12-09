@@ -117,7 +117,7 @@ void wait_trigger() {
   }
 }
 
-void capture_run() {  
+bool capture_run() {  
   for (uint16_t i=0; i<N_SAMPLES; ++i) {
     // divide actual sampling rate by repeating measurement at position
     uint8_t div_cnt = cfg.spl_div;
@@ -125,8 +125,15 @@ void capture_run() {
       out.a0[i] = adc_read(0);
       out.a1[i] = adc_read(1);
       toggle_acq_clock_output();
+
+      // drop frame if config changed to avoid unexpected data
+      // this must be in the inner loop to not lessen srate accuracy
+      if (recv_config())  
+        return false;      
     } while (div_cnt-- > 0);
   }
+
+  return true;
 }
 
 void setup() {
@@ -143,6 +150,6 @@ void setup() {
 
 void loop() {
   wait_trigger();
-  capture_run();
-  send_packet();
+  if (capture_run())
+    send_packet();
 }

@@ -34,7 +34,7 @@ class ScopeGui:
 
         self._mw = QtGui.QMainWindow()
         self._mw.setWindowTitle("Gruseloskop (feat. Arduino Uno)")
-        self._mw.resize(800, 800)
+        self._mw.resize(1000, 600)
 
         cw = QtGui.QWidget()
         self._mw.setCentralWidget(cw)
@@ -328,20 +328,18 @@ class ScopeGui:
 
     def _export_csv(self):
         backup = self._last_data
-        #if backup is None: # TODO
+        if backup is None:
+            return  # nothing to save yet
 
         filename, _ = QtGui.QFileDialog.getSaveFileName(
             self._mw,
             "Save CSV",
-            "",
+            "gruseloskop_export.csv",
             "CSV Files (*.csv)",
             options=QtGui.QFileDialog.DontUseNativeDialog,
         )
 
         if filename is not None:
-            if not filename.lower().endswith(".csv"):
-                filename += ".csv"
-                
             data = np.transpose(
                 [
                     backup.time0,
