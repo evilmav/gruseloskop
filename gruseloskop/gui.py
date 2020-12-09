@@ -34,7 +34,7 @@ class ScopeGui:
 
         self._mw = QtGui.QMainWindow()
         self._mw.setWindowTitle("Gruseloskop (feat. Arduino Uno)")
-        self._mw.resize(1000, 600)
+        self._mw.resize(1000, 700)
 
         cw = QtGui.QWidget()
         self._mw.setCentralWidget(cw)
@@ -215,8 +215,9 @@ class ScopeGui:
 
         self._sb_sgen_freq.valueChanged.connect(self._control_changed)
         self._sb_sgen_freq.setSizePolicy(
-            QtGui.QSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
+            QtGui.QSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Fixed)
         )
+        self._sb_sgen_freq.setFixedHeight(25)  # too small on PySide2 by default
 
         layout = QtGui.QVBoxLayout()
         layout.addWidget(lbl0)
@@ -234,10 +235,10 @@ class ScopeGui:
     def _author_controls_create(self):
         repo = '<a href="https://github.com/EvilMav/gruseloskop">GitHub repository</a>'
 
-        label = QtGui.QLabel("Ilya Elenskiy\ni.elenskiy@tu-bs.de\n" + repo)
-        label.setAlignment(QtGui.AlignCenter)
-        label.setTextFormat(QtGui.RichText)
-        label.setTextInteractionFlags(QtGui.TextBrowserInteraction)
+        label = QtGui.QLabel("Ilya Elenskiy<br/>i.elenskiy@tu-bs.de<br/>" + repo)
+        label.setAlignment(QtGui.Qt.AlignCenter)
+        label.setTextFormat(QtGui.Qt.RichText)
+        label.setTextInteractionFlags(QtGui.Qt.TextBrowserInteraction)
         label.setOpenExternalLinks(True)
 
         layout = QtGui.QVBoxLayout()

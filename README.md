@@ -35,6 +35,11 @@ Connect you Arduino Uno and use the IDE to compile and install the [firmware][fi
 `TimerOne` library must be installed for this to compile, which can be done in the IDE
 using *Sketch->Include Library->Manage Libraries...* menu.
 
+## Usage
+
+Simply launch `gruseloskop` from the command line with Arduino connected. It will 
+automatically detect the correct serial port by the currently hardcoded *VID:PID* pair.
+
 ## Capabilities
 
 Currently, selectable edge triggers are supported. After each trigger, the arduino will 
@@ -49,9 +54,6 @@ of up to 10%!** When connected to an external supply, the on-board linear regula
 likely provide more reproducible results, so use it when possible.
 
 
-
-
-<!-- Markdown link & img dfn's -->
 [arduino]: https://www.arduino.cc/en/software
 [firmware]: https://github.com/EvilMav/gruseloskop/tree/master/firmware
 [qt]: https://www.qt.io/
