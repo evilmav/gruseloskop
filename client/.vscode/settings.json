@@ -1,11 +1,14 @@
 {
+    "editor.rulers": [88],
     "cSpell.words": [
         "divs",
+        "dont",
         "fbase",
         "fgen",
         "fgenbase",
         "gruselloskop",
         "gruseloscope",
+        "gruseloskop",
         "mtpkit",
         "pyqt",
         "pyqtgraph",

@@ -36,7 +36,7 @@ if __name__ == "__main__":
 
         if len(devices) > 1:
             die(
-                "Too many boards found and I was too lazy to implement a selection dialog"
+                "Too many boards found and I'm too lazy to implement a selection dialog"
             )
 
         drv = UnoDriver(devices[0])

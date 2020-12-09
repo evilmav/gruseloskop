@@ -29,7 +29,7 @@ struct {
 
 struct {
   uint8_t sync = 0;
-  uint8_t trig_mode = TRIG_AUTO;        // dont use enum here to ensure 8bit
+  uint8_t trig_mode = TRIG_STOP;        // dont use enum here to ensure 8bit
   uint8_t trig_level = 0x8F;
   uint8_t trig_chan = 0;
   uint8_t trig_edge = EDGE_RISING; // dont use enum here to ensure 8bit

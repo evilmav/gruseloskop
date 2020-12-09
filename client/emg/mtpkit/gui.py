@@ -33,7 +33,7 @@ class ScopeGui:
     def _ui_setup(self):
 
         self._mw = QtGui.QMainWindow()
-        self._mw.setWindowTitle("MTP Gruselloskop")
+        self._mw.setWindowTitle("Gruseloskop (feat. Arduino Uno)")
         self._mw.resize(800, 800)
 
         cw = QtGui.QWidget()
@@ -98,6 +98,9 @@ class ScopeGui:
         self._gb_vertical_a1.toggled.connect(self._control_changed)
         self._gb_sgen.toggled.connect(self._control_changed)
 
+        self._gb_export = QtGui.QGroupBox("Export")
+        self._gb_export.setLayout(self._export_controls_create())
+
         self._gb_author = QtGui.QGroupBox("Author")
         self._gb_author.setLayout(self._author_controls_create())
 
@@ -107,6 +110,7 @@ class ScopeGui:
         layout.addWidget(self._gb_vertical_a0)
         layout.addWidget(self._gb_vertical_a1)
         layout.addWidget(self._gb_sgen)
+        layout.addWidget(self._gb_export)
         layout.addWidget(self._gb_author)
         return layout
 
@@ -210,13 +214,21 @@ class ScopeGui:
         )
 
         self._sb_sgen_freq.valueChanged.connect(self._control_changed)
-
-        self._sb_sgen_freq.stretch(1) # TODO
+        self._sb_sgen_freq.setSizePolicy(
+            QtGui.QSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
+        )
 
         layout = QtGui.QVBoxLayout()
-        #layout.setSizeConstraint(QtGui.QLayout.SetDefaultConstraint) # TODO
         layout.addWidget(lbl0)
         layout.addWidget(self._sb_sgen_freq)
+        return layout
+
+    def _export_controls_create(self):
+        self._btn_export_csv = QtGui.QPushButton("To CSV")
+        self._btn_export_csv.clicked.connect(self._export_csv)
+
+        layout = QtGui.QVBoxLayout()
+        layout.addWidget(self._btn_export_csv)
         return layout
 
     def _author_controls_create(self):
@@ -313,3 +325,29 @@ class ScopeGui:
         self._crt_ax_update()
         self._drv_update(self._last_data)
         self._driver.set_config(self._gather_drv_config())
+
+    def _export_csv(self):
+        backup = self._last_data
+        #if backup is None: # TODO
+
+        filename, _ = QtGui.QFileDialog.getSaveFileName(
+            self._mw,
+            "Save CSV",
+            "",
+            "CSV Files (*.csv)",
+            options=QtGui.QFileDialog.DontUseNativeDialog,
+        )
+
+        if filename is not None:
+            if not filename.lower().endswith(".csv"):
+                filename += ".csv"
+                
+            data = np.transpose(
+                [
+                    backup.time0,
+                    backup.data0,
+                    backup.time1,
+                    backup.data1,
+                ]
+            )
+            np.savetxt(filename, data, delimiter=",", header="t0, a0, t1, a1")
