@@ -89,13 +89,17 @@ class ScopeGui:
         self._gb_vertical_a1.setStyleSheet("QGroupBox:title {color: rgb(0, 200, 100);}")
         self._gb_vertical_a1.setLayout(self._vertical_controls_create(1))
 
-        self._gb_sgen = QtGui.QGroupBox("Signal generator")
+        self._gb_sgen = QtGui.QGroupBox("Signal generator (Pin 9)")
         self._gb_sgen.setCheckable(True)
+        self._gb_sgen.setChecked(False)
         self._gb_sgen.setLayout(self._sgen_controls_create())
 
         self._gb_vertical_a0.toggled.connect(self._control_changed)
         self._gb_vertical_a1.toggled.connect(self._control_changed)
         self._gb_sgen.toggled.connect(self._control_changed)
+
+        self._gb_author = QtGui.QGroupBox("Author")
+        self._gb_author.setLayout(self._author_controls_create())
 
         layout = QtGui.QVBoxLayout()
         layout.addWidget(gb_trig)
@@ -103,6 +107,7 @@ class ScopeGui:
         layout.addWidget(self._gb_vertical_a0)
         layout.addWidget(self._gb_vertical_a1)
         layout.addWidget(self._gb_sgen)
+        layout.addWidget(self._gb_author)
         return layout
 
     def _stats_create(self):
@@ -197,11 +202,26 @@ class ScopeGui:
         return layout
 
     def _sgen_controls_create(self):
-        lbl0 = QtGui.QLabel("Offset: 2.5V, Vpp=5V")
-        lbl1 = QtGui.QLabel("1kHz")
+        lbl0 = QtGui.QLabel("Rect: Offset=2.5V, Vpp=5V")
+
+        self._sb_sgen_freq = pg.SpinBox(value=1000)
+        self._sb_sgen_freq.setOpts(
+            bounds=(1, 5000), suffix="Hz", siPrefix=True, step=0.5, dec=True, minStep=1
+        )
+
+        self._sb_sgen_freq.valueChanged.connect(self._control_changed)
+
+        self._sb_sgen_freq.stretch(1) # TODO
+
         layout = QtGui.QVBoxLayout()
+        #layout.setSizeConstraint(QtGui.QLayout.SetDefaultConstraint) # TODO
         layout.addWidget(lbl0)
-        layout.addWidget(lbl1)
+        layout.addWidget(self._sb_sgen_freq)
+        return layout
+
+    def _author_controls_create(self):
+        layout = QtGui.QVBoxLayout()
+        layout.addWidget(QtGui.QLabel("Ilya Elenskiy, EMG\ni.elenskiy@tu-bs.de"))
         return layout
 
     def _crt_ax_update(self):
@@ -286,7 +306,7 @@ class ScopeGui:
         cfg.trig_chan = self._bg_trig_src.checkedId()
         cfg.trig_edge = self._bg_trig_edge.checkedId()
         cfg.timeframe = self.divtime * ScopeGui._time_divs
-        cfg.sgen_freq = 1000 if self._gb_sgen.isChecked() else 0
+        cfg.sgen_freq = self._sb_sgen_freq.value() if self._gb_sgen.isChecked() else 0.0
         return cfg
 
     def _control_changed(self, source):

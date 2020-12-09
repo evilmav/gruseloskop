@@ -141,14 +141,18 @@ class UnoDriver:
         self._upd_callback = callback
 
     def _config_packet_make(self, config, sample_div, level):
-        packet = np.empty(7, dtype=np.uint8)
+        sgen_period = 0 if config.sgen_freq == 0. else 1.0 / config.sgen_freq
+        sgen_period_100us = sgen_period * 10000
+
+        packet = np.empty(8, dtype=np.uint8)
         packet[0] = 0  # begin with 0 sync
         packet[1] = config.trig_mode
         packet[2] = level
         packet[3] = config.trig_chan
         packet[4] = config.trig_edge
         packet[5] = sample_div - 1
-        packet[6] = 0  # TODO: signal generator
+        packet[6] = sgen_period_100us % 0xFF  # split uint16 for little endian
+        packet[7] = sgen_period_100us // 0xFF
         return packet.tobytes()
 
     def _send_apply_config(self, config):

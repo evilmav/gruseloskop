@@ -1,5 +1,9 @@
+#include <TimerOne.h>
+
 
 #define ACQ_CLK_PIN 13  //Acquisition clock output here for external measurement
+#define SGEN_PIN 9      //Signal generator output
+
 #define N_SAMPLES 600
 
 
@@ -30,7 +34,7 @@ struct {
   uint8_t trig_chan = 0;
   uint8_t trig_edge = EDGE_RISING; // dont use enum here to ensure 8bit
   uint8_t spl_div = 0;             // drop every Nth sample to reduce sample rate
-  uint8_t sgen_div = 0;
+  uint16_t sgen_period_100us = 0;
 } cfg;
 
 
@@ -50,8 +54,11 @@ void adc_init() {
   adc_read(0); // dummy read required after init
 }
 
-void sgen_set(uint8_t fdiv) {
-  // TODO
+void signal_gen_update() {
+  if (cfg.sgen_period_100us)
+    Timer1.pwm(SGEN_PIN, 512, 100 * cfg.sgen_period_100us);  // 50% duty-cycle
+  else
+    Timer1.pwm(SGEN_PIN, 0);  // disable by setting 0 duty cycle
 }
 
 
@@ -67,7 +74,7 @@ bool recv_config() {
       Serial.write(0xAA);
       send_packet();
     } else {
-      sgen_set(cfg.sgen_div);
+      signal_gen_update();
       return true;
     }
   }  
@@ -123,8 +130,13 @@ void capture_run() {
 }
 
 void setup() {
-  adc_init();
   pinMode(ACQ_CLK_PIN, OUTPUT);
+  
+  Timer1.initialize(1000);
+  signal_gen_update();
+    
+  adc_init();
+  
   Serial.setTimeout(10000);
   Serial.begin(115200);
 }
