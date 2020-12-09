@@ -1,9 +1,8 @@
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtGui, QtCore
-
 import numpy as np
 
-from .driver import FrameData, Config, Trigger
+from .driver import Config, TriggerMode, TriggerEdge
 
 
 class ScopeGui:
@@ -113,43 +112,59 @@ class ScopeGui:
         return self._lbl_stats
 
     def _trigger_controls_create(self):
-        _rb_trig_auto = QtGui.QRadioButton("Auto")
-        _rb_trig_norm = QtGui.QRadioButton("Norm")
-        _rb_trig_stop = QtGui.QRadioButton("Stop")
-        _rb_trig_auto.setChecked(True)
+        rb_trig_auto = QtGui.QRadioButton("Auto")
+        rb_trig_norm = QtGui.QRadioButton("Norm")
+        rb_trig_stop = QtGui.QRadioButton("Stop")
+        rb_trig_auto.setChecked(True)
 
         self._bg_trig_mode = QtGui.QButtonGroup()
-        self._bg_trig_mode.addButton(_rb_trig_auto, Trigger.AUTO)
-        self._bg_trig_mode.addButton(_rb_trig_norm, Trigger.NORM)
-        self._bg_trig_mode.addButton(_rb_trig_stop, Trigger.STOP)
+        self._bg_trig_mode.addButton(rb_trig_auto, TriggerMode.AUTO)
+        self._bg_trig_mode.addButton(rb_trig_norm, TriggerMode.NORM)
+        self._bg_trig_mode.addButton(rb_trig_stop, TriggerMode.STOP)
 
-        _rb_trig_src0 = QtGui.QRadioButton("A0")
-        _rb_trig_src1 = QtGui.QRadioButton("A1")
-        _rb_trig_src0.setChecked(True)
+        rb_trig_src0 = QtGui.QRadioButton("A0")
+        rb_trig_src1 = QtGui.QRadioButton("A1")
+        rb_trig_src0.setChecked(True)
 
         self._bg_trig_src = QtGui.QButtonGroup()
-        self._bg_trig_src.addButton(_rb_trig_src0, 0)
-        self._bg_trig_src.addButton(_rb_trig_src1, 1)
+        self._bg_trig_src.addButton(rb_trig_src0, 0)
+        self._bg_trig_src.addButton(rb_trig_src1, 1)
 
         self._sld_trig_lvl = QtGui.QSlider(QtCore.Qt.Horizontal)
         self._sld_trig_lvl.setTracking(True)
         self._sld_trig_lvl.setValue(50)
 
+        rb_trig_edge_raising = QtGui.QRadioButton("Raising")
+        rb_trig_edge_falling = QtGui.QRadioButton("Falling")
+        rb_trig_edge_both = QtGui.QRadioButton("Both")
+        rb_trig_edge_raising.setChecked(True)
+
+        self._bg_trig_edge = QtGui.QButtonGroup()
+        self._bg_trig_edge.addButton(rb_trig_edge_raising, TriggerEdge.RAISING)
+        self._bg_trig_edge.addButton(rb_trig_edge_falling, TriggerEdge.FALLING)
+        self._bg_trig_edge.addButton(rb_trig_edge_both, TriggerEdge.BOTH)
+
         self._bg_trig_mode.idToggled.connect(self._control_changed)
         self._bg_trig_src.idToggled.connect(self._control_changed)
+        self._bg_trig_edge.idToggled.connect(self._control_changed)
         self._sld_trig_lvl.valueChanged.connect(self._trig_lvl_changed)
 
         layout = QtGui.QGridLayout()
-        layout.addWidget(_rb_trig_auto, 0, 0, 1, 1)
-        layout.addWidget(_rb_trig_norm, 0, 1, 1, 1)
-        layout.addWidget(_rb_trig_stop, 0, 2, 1, 1)
+        layout.addWidget(rb_trig_auto, 0, 0, 1, 1)
+        layout.addWidget(rb_trig_norm, 0, 1, 1, 1)
+        layout.addWidget(rb_trig_stop, 0, 2, 1, 1)
 
         layout.addWidget(QtGui.QLabel("Source:"), 1, 0, 1, 1)
-        layout.addWidget(_rb_trig_src0, 1, 1, 1, 1)
-        layout.addWidget(_rb_trig_src1, 1, 2, 1, 1)
+        layout.addWidget(rb_trig_src0, 1, 1, 1, 1)
+        layout.addWidget(rb_trig_src1, 1, 2, 1, 1)
 
         layout.addWidget(QtGui.QLabel("Level:"), 2, 0, 1, 1)
         layout.addWidget(self._sld_trig_lvl, 2, 1, 1, 2)
+
+        layout.addWidget(rb_trig_edge_raising, 3, 0, 1, 1)
+        layout.addWidget(rb_trig_edge_falling, 3, 1, 1, 1)
+        layout.addWidget(rb_trig_edge_both, 3, 2, 1, 1)
+
         return layout
 
     def _vertical_controls_create(self, chan):
@@ -240,12 +255,11 @@ class ScopeGui:
         a0pp = np.max(data.data0) - np.min(data.data0)
         a1avg = np.mean(data.data1)
         a1pp = np.max(data.data1) - np.min(data.data1)
-        stat = "A0: Vavg={:.3}, Vpp={:.3}; A1: Vavg={:.3}, Vpp={:.3};".format(
-            a0avg, a0pp, a1avg, a1pp
-        )
+        stat_a0 = "A0: Vavg={:04.3f}V, Vpp={:04.3f}V; ".format(a0avg, a0pp)
+        stat_a1 = "A1: Vavg={:04.3f}V, Vpp={:04.3f}V; ".format(a1avg, a1pp)
 
-        spl_rate_hint = "Sample rate: {:.3}kHz; ".format(data.spl_rate / 1000)
-        self._lbl_stats.setText(spl_rate_hint + stat)
+        spl_rate_hint = "Sample rate: {:06.3f}kHz; ".format(data.spl_rate / 1000)
+        self._lbl_stats.setText(stat_a0 + stat_a1 + spl_rate_hint)
 
     def _drv_update(self, data):
         self._last_data = data
@@ -270,6 +284,7 @@ class ScopeGui:
         cfg.trig_mode = self._bg_trig_mode.checkedId()
         cfg.trig_level = self._sld_trig_lvl.value() / 100 * 5.0
         cfg.trig_chan = self._bg_trig_src.checkedId()
+        cfg.trig_edge = self._bg_trig_edge.checkedId()
         cfg.timeframe = self.divtime * ScopeGui._time_divs
         cfg.sgen_freq = 1000 if self._gb_sgen.isChecked() else 0
         return cfg

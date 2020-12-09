@@ -7,17 +7,22 @@ import numpy as np
 from time import sleep
 
 
-class Trigger(IntEnum):
+class TriggerMode(IntEnum):
     AUTO = 0
     NORM = 1
     STOP = 2
 
+class TriggerEdge(IntEnum):
+    RAISING = 0
+    FALLING = 1
+    BOTH = 2
 
 @dataclass
 class Config:
-    trig_mode: Trigger = Trigger.AUTO
+    trig_mode: TriggerMode = TriggerMode.AUTO
     trig_level: float = 2.5
     trig_chan: int = 0
+    trig_edge: TriggerEdge = TriggerEdge.RAISING
     timeframe: float = 0.1
     sgen_freq: float = 0
 
@@ -46,8 +51,8 @@ class UnoDriver:
 
     _vref = 5.0
     _chan_samples = 600
-    _sample_base_clk = 30000
-    _channel1_delay = 1.0 / 76900
+    _sample_base_clk = 76900 / 2   # rate measured at reference clock output (13)
+    _channel1_delay = 1.0 / 76900  # maximum theoretical rate between samples
 
     _fgen_base_clk = 30000  # TODO
 
@@ -136,13 +141,14 @@ class UnoDriver:
         self._upd_callback = callback
 
     def _config_packet_make(self, config, sample_div, level):
-        packet = np.empty(6, dtype=np.uint8)
+        packet = np.empty(7, dtype=np.uint8)
         packet[0] = 0  # begin with 0 sync
         packet[1] = config.trig_mode
         packet[2] = level
         packet[3] = config.trig_chan
-        packet[4] = sample_div
-        packet[5] = 0  # TODO: signal generator
+        packet[4] = config.trig_edge
+        packet[5] = sample_div - 1
+        packet[6] = 0  # TODO: signal generator
         return packet.tobytes()
 
     def _send_apply_config(self, config):
@@ -165,7 +171,7 @@ class UnoDriver:
         if self._dummy_mode:
             if (
                 self._upd_callback is not None
-                and not self._last_config.trig_mode == Trigger.STOP
+                and not self._last_config.trig_mode == TriggerMode.STOP
             ):
                 self._upd_callback(self._get_dummy_dataframe())
         else:
