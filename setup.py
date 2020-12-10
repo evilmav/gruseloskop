@@ -13,7 +13,7 @@ setup_args = {
     "long_description": long_description,
     "long_description_content_type": "text/markdown",
     "url": "https://github.com/EvilMav/gruseloskop",
-    "packages": ["gruseloskop"],
+    "packages": setuptools.find_packages()#["gruseloskop"],
 }
 
 if __name__ == "__main__":

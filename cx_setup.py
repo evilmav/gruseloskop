@@ -18,7 +18,7 @@ cx.setup(
     options={"build_exe": build_exe_options},
     executables=[
         cx.Executable(
-            "bin/gruseloskop.py",
+            "bin/gruseloskop",
             targetName="gruseloskop.exe",
             shortcutName="Gruseloskop",
             base=base,

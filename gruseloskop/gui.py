@@ -1,11 +1,14 @@
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtGui, QtCore
 import numpy as np
+from pyqtgraph.functions import mkPen
 
 from .driver import Config, TriggerMode, TriggerEdge
 
 
 class ScopeGui:
+    _vmin = 0.0
+    _vmax = 5.0
     _time_divs = 6
     _volt_divs = 5
     _t_div_items = {
@@ -61,6 +64,28 @@ class ScopeGui:
         self._plot1 = self._crt.plot()
         self._plot1.setPen((000, 200, 100))
 
+        # cursors for trigger and measurements
+        pen_curtrig = mkPen("b", style=QtCore.Qt.DotLine)
+        pen_cur0 = mkPen("r", style=QtCore.Qt.DashLine)
+        pen_cur1 = mkPen("y", style=QtCore.Qt.DashLine)
+
+        self._cursor_trig = pg.InfiniteLine(2.5, 0, pen_curtrig, movable=False)
+        self._cursor_trig.hide()
+
+        self._cursor0 = pg.InfiniteLine(2.5, 0, pen_cur0, True, label="")
+        self._cursor1 = pg.InfiniteLine(2.5, 0, pen_cur1, True, label="")
+
+        self._cursor_trig.hide()
+        self._cursor0.hide()
+        self._cursor1.hide()
+
+        self._cursor0.sigPositionChanged.connect(self._cursor_moved)
+        self._cursor1.sigPositionChanged.connect(self._cursor_moved)
+
+        self._crt.addItem(self._cursor_trig)
+        self._crt.addItem(self._cursor0)
+        self._crt.addItem(self._cursor1)
+
         return self._crt
 
     def _crt_axis_set(self, name, minval, maxval, divs_num):
@@ -94,9 +119,15 @@ class ScopeGui:
         self._gb_sgen.setChecked(False)
         self._gb_sgen.setLayout(self._sgen_controls_create())
 
+        self._gb_cursors = QtGui.QGroupBox("Cursors")
+        self._gb_cursors.setCheckable(True)
+        self._gb_cursors.setChecked(False)
+        self._gb_cursors.setLayout(self._cursor_controls_create())
+
         self._gb_vertical_a0.toggled.connect(self._control_changed)
         self._gb_vertical_a1.toggled.connect(self._control_changed)
         self._gb_sgen.toggled.connect(self._control_changed)
+        self._gb_cursors.toggled.connect(self._cursors_changed)
 
         self._gb_export = QtGui.QGroupBox("Export")
         self._gb_export.setLayout(self._export_controls_create())
@@ -109,6 +140,7 @@ class ScopeGui:
         layout.addWidget(gb_horizontal)
         layout.addWidget(self._gb_vertical_a0)
         layout.addWidget(self._gb_vertical_a1)
+        layout.addWidget(self._gb_cursors)
         layout.addWidget(self._gb_sgen)
         layout.addWidget(self._gb_export)
         layout.addWidget(self._gb_author)
@@ -158,6 +190,11 @@ class ScopeGui:
         self._bg_trig_edge.buttonClicked.connect(self._control_changed)
         self._sld_trig_lvl.valueChanged.connect(self._trig_lvl_changed)
 
+        # timer for hiding trigger helper cursor
+        self._trig_cursor_timer = QtCore.QTimer()
+        self._trig_cursor_timer.setSingleShot(True)
+        self._trig_cursor_timer.timeout.connect(self._cursor_trig.hide)
+
         layout = QtGui.QGridLayout()
         layout.addWidget(rb_trig_auto, 0, 0, 1, 1)
         layout.addWidget(rb_trig_norm, 0, 1, 1, 1)
@@ -205,6 +242,22 @@ class ScopeGui:
         layout.addWidget(self._rb_xy_a0a10)
         return layout
 
+    def _cursor_controls_create(self):
+        self._rb_cursors_horizontal = QtGui.QRadioButton("Horizontal")
+        self._rb_cursors_vertical = QtGui.QRadioButton("Vertical")
+        self._rb_cursors_horizontal.setChecked(True)
+
+        self._lbl_cursors = QtGui.QLabel("")
+
+        self._rb_cursors_horizontal.toggled.connect(self._cursors_changed)
+        self._rb_cursors_vertical.toggled.connect(self._cursors_changed)
+
+        layout = QtGui.QGridLayout()
+        layout.addWidget(self._rb_cursors_horizontal, 0, 0, 1, 1)
+        layout.addWidget(self._rb_cursors_vertical, 0, 1, 1, 1)
+        layout.addWidget(self._lbl_cursors, 1, 0, 1, 2)
+        return layout
+
     def _sgen_controls_create(self):
         lbl0 = QtGui.QLabel("Rect: Offset=2.5V, Vpp=5V")
 
@@ -246,22 +299,19 @@ class ScopeGui:
         return layout
 
     def _crt_ax_update(self):
-        vmin, vmax = 0.0, 5.0
 
         if self.xy_mode:
             self._crt.setXRange(0, 5)
-            self._crt_axis_set("bottom", vmin, vmax, ScopeGui._volt_divs)
+            self._crt_axis_set(
+                "bottom", ScopeGui._vmin, ScopeGui._vmax, ScopeGui._volt_divs
+            )
         else:
             tmax = self.divtime * ScopeGui._time_divs
             self._crt.setXRange(0, tmax)
             self._crt_axis_set("bottom", 0.0, tmax, ScopeGui._time_divs)
 
-        self._crt.setYRange(0, 5)
-        self._crt_axis_set("left", vmin, vmax, ScopeGui._volt_divs)
-
-    def _trig_lvl_changed(self, source):
-        # reserved for drawing trigger level line later
-        self._control_changed(source)
+        self._crt.setYRange(ScopeGui._vmin, ScopeGui._vmax)
+        self._crt_axis_set("left", ScopeGui._vmin, ScopeGui._vmax, ScopeGui._volt_divs)
 
     def _crt_data_update(self, data):
         if data is None:
@@ -320,20 +370,95 @@ class ScopeGui:
         else:
             return False
 
+    @property
+    def trig_level(self):
+        return self._sld_trig_lvl.value() / 99 * ScopeGui._vmax
+
+    @property
+    def cursors_mode(self):
+        if self.xy_mode or self._rb_cursors_horizontal.isChecked():
+            return "voltage"
+        else:
+            return "time"
+
     def _gather_drv_config(self):
         cfg = Config()
         cfg.trig_mode = self._bg_trig_mode.checkedId()
-        cfg.trig_level = self._sld_trig_lvl.value() / 100 * 5.0
+        cfg.trig_level = self.trig_level
         cfg.trig_chan = self._bg_trig_src.checkedId()
         cfg.trig_edge = self._bg_trig_edge.checkedId()
         cfg.timeframe = self.divtime * ScopeGui._time_divs
         cfg.sgen_freq = self._sb_sgen_freq.value() if self._gb_sgen.isChecked() else 0.0
         return cfg
 
+    def _cursor_moved(self, source):
+        if self._gb_cursors.isChecked():
+            c0, c1 = self._cursor0.value(), self._cursor1.value()
+
+            if self.cursors_mode == "voltage":
+                self._lbl_cursors.setText("ΔV={:4.3f}V".format(c1 - c0))
+            else:
+                dt = np.abs(c1 - c0)
+                freq = 1.0 / dt if dt != 0 else np.inf
+                dt_text = (
+                    "Δt={:0.3f}s".format(dt)
+                    if dt >= 1.0
+                    else "Δt={:0.2f}ms".format(dt * 1e3)
+                )
+                freq_text = (
+                    "1/Δt={:0.2f}kHz".format(freq * 1e-3)
+                    if freq >= 1e3
+                    else "1/Δt={:0.2f}Hz".format(freq)
+                )
+                self._lbl_cursors.setText(dt_text + "  " + freq_text)
+        else:
+            self._lbl_cursors.setText("")
+
+    def _trig_lvl_changed(self, source):
+        # reserved for drawing trigger level line later
+        self._trig_cursor_timer.stop()
+        self._trig_cursor_timer.start(1500)
+        self._cursor_trig.setValue(self.trig_level)
+        self._cursor_trig.show()
+
+        self._control_changed(source)
+
+    def _cursors_changed(self, source):
+        if self.cursors_mode == "voltage":
+            bounds = (ScopeGui._vmin, ScopeGui._vmax)
+            angle = 0
+            self._cursor0.label.setFormat("V0={value:0.2f}V")
+            self._cursor1.label.setFormat("V1={value:0.2f}V")
+
+        else:
+            bounds = (0.0, self.divtime * ScopeGui._time_divs)
+            angle = 90
+            if self.divtime >= 0.1:
+                self._cursor0.label.setFormat("t0={value:0.2f}s")
+                self._cursor1.label.setFormat("t1={value:0.2f}s")
+            else:
+                self._cursor0.label.setFormat("t0={value:0.4f}s")
+                self._cursor1.label.setFormat("t1={value:0.4f}s")
+
+        self._cursor0.setBounds(bounds)
+        self._cursor1.setBounds(bounds)
+        self._cursor0.setAngle(angle)
+        self._cursor1.setAngle(angle)
+
+        if self._gb_cursors.isChecked():
+            self._cursor0.show()
+            self._cursor1.show()
+        else:
+            self._cursor0.hide()
+            self._cursor1.hide()
+
+        self._cursor_moved(None)  # Update calculated values
+
     def _control_changed(self, source):
         self._crt_ax_update()
         self._drv_update(self._last_data)
         self._driver.set_config(self._gather_drv_config())
+        self._cursors_changed(None)
 
     def _export_csv(self):
         backup = self._last_data
