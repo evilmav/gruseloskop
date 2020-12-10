@@ -29,8 +29,8 @@ pip install git+https://github.com/EvilMav/gruseloskop.git
 
 Unless you have python installed, you can grab a latest stand-alone binary package, 
 named something like `gruseloskop-x.x.x-win64.7z`, under
-[releases][releases]. It is ridiculously big but id does the job.
-
+[releases][releases]. It is ridiculously big, containing a large part of the Python 
+distribution, but it does not require any setup. 
 
 ### Firmware
 
