@@ -2,6 +2,7 @@
 
 import sys
 import argparse
+import PySide2  # this forces PySide backend for pyqtgraph
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtGui, QtCore
 

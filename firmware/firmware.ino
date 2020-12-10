@@ -1,11 +1,9 @@
 #include <TimerOne.h>
 
+#define N_SAMPLES 800
 
 #define ACQ_CLK_PIN 13  //Acquisition clock output here for external measurement
 #define SGEN_PIN 9      //Signal generator output
-
-#define N_SAMPLES 800
-
 
 
 typedef enum {
@@ -56,7 +54,7 @@ void adc_init() {
 
 void signal_gen_update() {
   if (cfg.sgen_period_100us)
-    Timer1.pwm(SGEN_PIN, 512, 100 * cfg.sgen_period_100us);  // 50% duty-cycle
+    Timer1.pwm(SGEN_PIN, 512, 100UL * cfg.sgen_period_100us);  // 50% duty-cycle
   else
     Timer1.pwm(SGEN_PIN, 0);  // disable by setting 0 duty cycle
 }
@@ -88,7 +86,7 @@ void toggle_acq_clock_output() {
 }
 
 void wait_trigger() {    
-  uint32_t auto_countdown = 3 * (cfg.spl_div + 1) * N_SAMPLES;
+  uint32_t auto_countdown = 3UL * (cfg.spl_div + 1UL) * N_SAMPLES;
   
   uint8_t cur = adc_read(cfg.trig_chan);
   uint8_t last = cur;  
@@ -118,8 +116,7 @@ void wait_trigger() {
   }
 }
 
-bool capture_run() {  
-  //
+bool capture_run() {    
   for (uint16_t i=0; i<N_SAMPLES; ++i) {
     // divide actual sampling rate by repeating measurement at position
     uint8_t div_cnt = cfg.spl_div;
@@ -134,7 +131,7 @@ bool capture_run() {
         return false;      
     } while (div_cnt-- > 0);
   }
-   // sei();
+   
   return true;
 }
 
