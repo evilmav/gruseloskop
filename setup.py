@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup_args = {
     "name": "gruseloskop",
-    "version": "0.1.1",
+    "version": "0.2.0",
     "author": "Ilya Elenskiy",
     "author_email": "i.elenskiy@tu-bs.de",
     "license": "GPLv3",
