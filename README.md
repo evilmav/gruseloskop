@@ -50,8 +50,8 @@ port by the currently hardcoded *VID:PID* pair.
 Currently, selectable edge triggers are supported. After each trigger, the arduino will 
 sample `A0` and `A1` channels with 8 bit, filling 800 sample buffer. The sample rate is 
 chosen such that at least one screen of the GUI is filled, achieving a maximum of about
-25kHz at sufficiently low time bases. Pin 9 can be used as a 5V rectangle wave generator 
-output with selectable frequency. 
+38.4kHz at sufficiently low time bases. Pin 9 can be used as a 5V rectangle wave 
+generator output with selectable frequency between 1Hz and 5kHz. 
 
 Be careful with the voltages: to achieve a 5V input range the Vcc of the Board is used 
 as the **reference voltage**. When connected to USB only, this is subject to an 
