@@ -31,25 +31,27 @@ struct {
   uint8_t trig_level = 0x8F;
   uint8_t trig_chan = 0;
   uint8_t trig_edge = EDGE_RISING; // dont use enum here to ensure 8bit
-  uint8_t spl_div = 0;             // drop every Nth sample to reduce sample rate
+  uint16_t spl_div = 0;             // drop every Nth sample to reduce sample rate
   uint16_t sgen_period_100us = 0;
 } cfg;
 
 
-uint8_t adc_read( uint8_t channel )
+uint8_t adc_read_last( uint8_t next_channel )
 {
-  // Kanal waehlen, ohne andere Bits zu beeinflußen
-  ADMUX = (ADMUX & ~(0x1F)) | (channel & 0x1F);
-  ADCSRA |= (1<<ADSC);            // trigger "single conversion"
-  while (ADCSRA & (1<<ADSC) ) {   // wait ready
+  // in free-running mode, the mux will switch only after current conversion done
+  ADMUX = (ADMUX & ~(0x1F)) | (next_channel & 0x1F);
+  
+  while (!(ADCSRA & (1<<ADIF) )) {   // wait until current free run ready
   }
-  return ADCH;                    // left justified 8 bit result (see ADLAR)
+  ADCSRA |= 1 << ADIF;              // clear flag (yes, you have to write 1)
+  return ADCH;                      // left justified 8 bit result (see ADLAR)
 }
 
-void adc_init() {
-  ADMUX = (1<<REFS0) | (1<<ADLAR); // ref to AVcc, left-justified output (for 8 bit)
-  ADCSRA = (1<<ADPS2) | (1<<ADEN); // Presc=16, conversion rate 76.9kHz, enable
-  adc_read(0); // dummy read required after init
+void adc_init_freerun() {
+  ADMUX = (1<<REFS0) | (1<<ADLAR);  // ref to AVcc, left-justified output (for 8 bit)
+  ADCSRA = (1<<ADPS2) | (1<<ADEN);  // Presc=16, conversion rate 76.9kHz, enable
+  ADCSRB = 0;                       // free-running autotrigger
+  ADCSRA |= (1<<ADATE) | (1<<ADSC); // start with auto-trigger
 }
 
 void signal_gen_update() {
@@ -87,17 +89,17 @@ void toggle_acq_clock_output() {
 
 void wait_trigger() {    
   uint32_t auto_countdown = 3UL * (cfg.spl_div + 1UL) * N_SAMPLES;
-  
-  uint8_t cur = adc_read(cfg.trig_chan);
-  uint8_t last = cur;  
+
+  uint8_t last = adc_read_last(cfg.trig_chan); // dummy read to set next channel
+  uint8_t cur = adc_read_last(cfg.trig_chan);
   
   while (auto_countdown > 0) {
     last = cur;
-    cur = adc_read(cfg.trig_chan);
+    cur = adc_read_last(cfg.trig_chan);
 
     if (recv_config()) {
       // config changed, this took some time - reset to avoid jitter      
-      cur = adc_read(cfg.trig_chan);
+      cur = adc_read_last(cfg.trig_chan);
       continue;
     }
 
@@ -117,19 +119,22 @@ void wait_trigger() {
 }
 
 bool capture_run() {    
+  adc_read_last(0);  // dummy read while setting 0 as next channel
+  
   for (uint16_t i=0; i<N_SAMPLES; ++i) {
     // divide actual sampling rate by repeating measurement at position
-    uint8_t div_cnt = cfg.spl_div;
+    uint16_t div_cnt = cfg.spl_div;
     do {      
-      out.a0[i] = adc_read(0);
-      out.a1[i] = adc_read(1);
-      toggle_acq_clock_output();
+      // 1 and 0 inverted as we pass the next channel to read, not current
+      out.a0[i] = adc_read_last(1);
+      out.a1[i] = adc_read_last(0);      
       
-      // drop frame if config changed to avoid unexpected data
-      // this must be in the inner loop to not lessen srate accuracy
+      // drop frame if config changed to avoid unexpected data      
       if (recv_config())  
         return false;      
     } while (div_cnt-- > 0);
+    
+    toggle_acq_clock_output();
   }
    
   return true;
@@ -141,7 +146,7 @@ void setup() {
   Timer1.initialize(1000);
   signal_gen_update();
     
-  adc_init();
+  adc_init_freerun();
   
   Serial.setTimeout(10000);
   Serial.begin(115200);
