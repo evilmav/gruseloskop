@@ -16,16 +16,17 @@ the source code. Consider yourself lucky if you find a comment there.
 
 ## Installation
 
-### On Linux
+### On Linux :penguin:
 
-First, ensure that [Qt][qt] is installed on your system. Use `pip` to install the GUI,
-note that it will automatically install [PySide2][pyside] Qt bindings.
+First, ensure that [Qt][qt] is installed using your distribution's package manager. 
+Use `pip` to install the GUI, note that it will automatically install [PySide2][pyside] 
+Qt bindings.
 
 ```sh
 pip install git+https://github.com/EvilMav/gruseloskop.git
 ```
 
-### On Windows
+### On Windows :scream:
 
 Unless you have python installed, you can grab a latest stand-alone binary package, 
 named something like `gruseloskop-x.x.x-win64.7z`, under
@@ -40,8 +41,9 @@ using *Sketch->Include Library->Manage Libraries...* menu.
 
 ## Usage
 
-Simply launch `gruseloskop` from the command line with Arduino connected. It will 
-automatically detect the correct serial port by the currently hardcoded *VID:PID* pair.
+Simply launch `gruseloskop` from the command line (or doubleclick `gruseloskop.exe` 
+on Windows) with Arduino connected. It will automatically detect the correct serial 
+port by the currently hardcoded *VID:PID* pair.
 
 ## Capabilities
 
@@ -57,9 +59,14 @@ as the **reference voltage**. When connected to USB only, this is subject to an
 on-board linear regulator will likely provide more reproducible results, so use it when
 possible.
 
+## Contributing
+
+Feel free to fork and submit pull requests. Any python code checked in must be 
+formated using [Black][black], which forces PEP8 but with 88 columns rather then 80.
 
 [arduino]: https://www.arduino.cc/en/software
 [firmware]: https://github.com/EvilMav/gruseloskop/tree/master/firmware
 [releases]: https://github.com/EvilMav/gruseloskop/releases/
 [qt]: https://www.qt.io/
 [pyside]: https://wiki.qt.io/Qt_for_Python
+[black]: https://black.readthedocs.io/en/stable/
