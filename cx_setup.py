@@ -6,7 +6,7 @@ from setup import setup_args
 build_exe_options = {
     "packages": ["os", "numpy", "pyqtgraph", "PySide2"],
     "includes": "cProfile",
-    "excludes": ["tkinter", "PyQt5", "PyQt4"],
+    "excludes": ["tkinter", "PyQt5", "PyQt4", "pyqtgraph.examples"],
 }
 
 base = None
