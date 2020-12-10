@@ -27,7 +27,10 @@ pip install git+https://github.com/EvilMav/gruseloskop.git
 
 ### On Windows
 
-TODO: exe package
+Unless you have python installed, you can grab a latest stand-alone binary package, 
+named something like `gruseloskop-x.x.x-win64.7z`, under
+[releases][releases]. It is ridiculously big but id does the job.
+
 
 ### Firmware
 
@@ -57,5 +60,6 @@ possible.
 
 [arduino]: https://www.arduino.cc/en/software
 [firmware]: https://github.com/EvilMav/gruseloskop/tree/master/firmware
+[releases]: https://github.com/EvilMav/gruseloskop/releases/
 [qt]: https://www.qt.io/
 [pyside]: https://wiki.qt.io/Qt_for_Python
