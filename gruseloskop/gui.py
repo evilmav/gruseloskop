@@ -53,6 +53,7 @@ class ScopeGui:
         if self._crt.sceneBoundingRect().contains(pos):
             mousePoint = self._crt.plotItem.vb.mapSceneToView(pos)
             self.vLine.setPos(mousePoint.x())
+            self.hLine.setPos(mousePoint.y())
 
     def _crt_plot_clicked(self,plot,points):
             item = points[0].pos()
