@@ -426,7 +426,7 @@ class ScopeGui:
     def _cursors_changed(self, source):
         if self.cursors_mode == "voltage":
             bounds = (ScopeGui._vmin, ScopeGui._vmax)
-            angle = 0
+            angle = 0 if self._rb_cursors_horizontal.isChecked() else 90
             self._cursor0.label.setFormat("V0={value:0.2f}V")
             self._cursor1.label.setFormat("V1={value:0.2f}V")
 

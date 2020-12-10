@@ -3,3 +3,4 @@ __pycache__
 .benchmarks
 .venv
 *.egg-info
+.VSCodeCounter
