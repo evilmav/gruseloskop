@@ -1,6 +1,7 @@
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtGui, QtCore
 import numpy as np
+import PySide2
 
 from .driver import Config, TriggerMode, TriggerEdge
 
@@ -47,20 +48,44 @@ class ScopeGui:
 
         self._mw.show()
 
+    def _crt_mouseMoved(self,evt):
+        pos = evt
+        if self._crt.sceneBoundingRect().contains(pos):
+            mousePoint = self._crt.plotItem.vb.mapSceneToView(pos)
+            self.vLine.setPos(mousePoint.x())
+
+    def _crt_plot_clicked(self,plot,points):
+            item = points[0].pos()
+            x, y = item.x(), item.y()
+            QtGui.QToolTip.showText(PySide2.QtGui.QCursor().pos(),"x: " + str(x) + ", y: " + str(y))
+
     def _crt_create(self):
         self._crt = pg.PlotWidget(name="Scope")
-        self._crt.setMouseEnabled(x=False, y=False)
+        self._crt.setMouseEnabled(x=True, y=True)
+        
         self._crt.setMenuEnabled(False)
         self._crt.showGrid(x=True, y=True, alpha=0.3)
 
         pg.setConfigOptions(antialias=True, leftButtonPan=False)
 
-        self._plot0 = self._crt.plot()
-        self._plot0.setPen((200, 200, 100))
+        self.vLine = pg.InfiniteLine(angle=90, movable=False)
+        self.hLine = pg.InfiniteLine(angle=0, movable=False)
+        self.vLine.setPen((255, 255, 255))
+        self.hLine.setPen((255, 255, 255))  
 
-        self._plot1 = self._crt.plot()
+        self._crt.addItem(self.vLine, ignoreBounds=True)
+        self._crt.addItem(self.hLine, ignoreBounds=True)
+        self._crt.scene().sigMouseMoved.connect(self._crt_mouseMoved)
+
+        self._plot0 = self._crt.plot(symbol='o', symbolSize=20,symbolPen=(0,0,0,0), symbolBrush=(0,0,0,0)) #add symbol to make it clickable and make it invisible
+        self._plot0.setPen((200, 200, 100))
+        self._plot1 = self._crt.plot(symbol='o', symbolSize=20,symbolPen=(0,0,0,0), symbolBrush=(0,0,0,0))
         self._plot1.setPen((000, 200, 100))
 
+        self._plot1.curve.setClickable(True)
+        self._plot0.curve.setClickable(True)
+        self._plot0.sigPointsClicked.connect(self._crt_plot_clicked)
+        self._plot1.sigPointsClicked.connect(self._crt_plot_clicked)
         return self._crt
 
     def _crt_axis_set(self, name, minval, maxval, divs_num):
