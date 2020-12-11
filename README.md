@@ -29,13 +29,18 @@ pip install git+https://github.com/EvilMav/gruseloskop.git
 ### On Windows :scream:
 
 Unless you have python installed, you can grab a latest stand-alone binary package, 
-named something like `gruseloskop-x.x.x-win64.7z`, under
-[releases][releases]. It is ridiculously big, containing a large part of the Python 
-distribution, but it does not require any setup. 
+named something like `gruseloskop-x.x.x-amd64.7z`, under
+[releases][releases]. It contains an *.msi* installer and the compatible Arduino 
+project. After running the install, you can run Gruseloskop using the Desktop or 
+Start-Menu shortcut. 
+
+Do not be too surprised about the big size of the installer: it contains a large part
+of a Python/Qt distribution to make your life easier.
 
 ### Firmware
 
 Connect you Arduino Uno and use the IDE to compile and install the [firmware][firmware].
+When using windows package, the right firmware is included with the downloaded archive.
 `TimerOne` library must be installed for this to compile, which can be done in the IDE
 using *Sketch->Include Library->Manage Libraries...* menu.
 
@@ -59,10 +64,20 @@ as the **reference voltage**. When connected to USB only, this is subject to an
 on-board linear regulator will likely provide more reproducible results, so use it when
 possible.
 
-## Contributing
+## Development & Contributing
 
 Feel free to fork and submit pull requests. Any python code checked in must be 
 formated using [Black][black], which forces PEP8 but with 88 columns rather then 80.
+
+For a development install use
+```sh
+python setup.py develop
+```
+inside the checked-out package directory. Rebuilding windows *.msi* is done using
+```sh
+python cx_setup.py bdist_msi
+```
+under a running windows install.
 
 [arduino]: https://www.arduino.cc/en/software
 [firmware]: https://github.com/EvilMav/gruseloskop/tree/master/firmware
