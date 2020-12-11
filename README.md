@@ -29,7 +29,7 @@ pip install git+https://github.com/EvilMav/gruseloskop.git
 ### On Windows :scream:
 
 Unless you have python installed, you can grab a latest stand-alone binary package, 
-named something like `gruseloskop-x.x.x-amd64.7z`, under
+named something like `gruseloskop-x.x.x-amd64.zip`, under
 [releases][releases]. It contains an *.msi* installer and the compatible Arduino 
 project. After running the install, you can run Gruseloskop using the Desktop or 
 Start-Menu shortcut. 
