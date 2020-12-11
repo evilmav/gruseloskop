@@ -2,7 +2,7 @@
 
 # Gruseloskop
 
-Gruseloskop (german worldplay refering to an imagination of having
+Gruseloskop (german worldplay refering to the idea of having
 this as the only tool in your lab) is a simple oscilloscope GUI for Arduino Uno. 
 
 > **Companion Arduino Uno sketch must be manually flashed using [Arduino IDE][arduino]**
